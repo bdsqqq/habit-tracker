@@ -1,24 +1,30 @@
-import { useEffect } from "react";
-
-export default function Home({ habit_instances }) {
-  useEffect(() => {
-    let instances = habit_instances.habit_tracker_habit_instance;
-    instances.map((instance) => {
-      console.log(instance.value, instance.instance_date);
-    });
-  }, [habit_instances]);
-  return <div>Hej do</div>;
+export default function Home({ habit_instances, today }) {
+  return (
+    <ul>
+      {habit_instances.habit_tracker_habit_instance.map((instance) => (
+        <li key={instance.value}>{instance.value}</li>
+      ))}
+      <li>{today}</li>
+    </ul>
+  );
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
+  let today = new Date().toISOString().slice(0, 10);
   const { data } = await client.query({
+    variables: {
+      date: today,
+    },
     query: gql`
-      query MyQuery {
-        habit_tracker_habit_instance {
-          id
-          habit_id
-          instance_date
+      query MyQuery($date: date!) {
+        habit_tracker_habit_instance(
+          where: {
+            habit_id: { _eq: 1 }
+            _and: { instance_date: { _eq: $date } }
+          }
+        ) {
           value
+          instance_date
         }
       }
     `,
@@ -27,6 +33,7 @@ export async function getStaticProps() {
   return {
     props: {
       habit_instances: data,
+      today: today,
     },
   };
 }
